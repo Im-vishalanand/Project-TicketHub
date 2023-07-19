@@ -31,6 +31,7 @@ bcrypt = Bcrypt(app)
 # menu_collection = db[MENU_COLLECTION]
 # orders_collection = db[ORDERS_COLLECTION]
 
+
 # Set up the default MongoDB connection
 app.config['MONGODB_SETTINGS'] = {
     'host': 'mongodb+srv://imvishalanand11:HXKXtYsncu4rqNmq@cluster0.kjlyzjl.mongodb.net/tickethubDB?retryWrites=true&w=majority',  
@@ -40,7 +41,10 @@ mongoengine.connect(host=app.config['MONGODB_SETTINGS']['host'])
 
 
 
+# Routes for managing the admin
 
+# admin signup
+# http://127.0.0.1:5000/admin/signup
 @app.route("/admin/signup", methods=["POST"])
 def admin_signup():
     new_admin = request.get_json()
@@ -71,7 +75,8 @@ def admin_signup():
 
 
 
-
+# admin login
+# http://127.0.0.1:5000/admin/login
 @app.route("/admin/login", methods=["POST"])
 def admin_login():
     login_data = request.get_json()
@@ -96,6 +101,11 @@ def admin_login():
         return jsonify({"message": "Wrong password"}), 400
 
 
+
+# Routes for managing the user
+
+# get all user
+#http://127.0.0.1:5000/
 @app.route("/", methods=["GET"])
 def get_all_users():
     try:
@@ -107,6 +117,10 @@ def get_all_users():
         return "Error: Database connection is not active"
     
 
+
+
+# user signup
+# http://127.0.0.1:5000/user/signup
 @app.route("/user/signup", methods=["POST"])
 def user_signup():
     if request.method != "POST" :
@@ -146,6 +160,8 @@ def user_signup():
     return jsonify({"message": "Signup successful"}), 201
 
 
+# user login
+# http://127.0.0.1:5000/user/login
 @app.route("/user/login", methods=["POST"])
 def user_login() :
     login_data = request.get_json()
