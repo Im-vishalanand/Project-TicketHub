@@ -1,11 +1,17 @@
 from dotenv import dotenv_values
 env_vars = dotenv_values('.env')
 import os
-from flask import Blueprint, Flask, request, jsonify
+from flask import Blueprint, Flask, request, jsonify, Response
+import json
 from flask_cors import CORS
 from pymongo import MongoClient
 from model import Admin
 from model import User
+from model import Movie
+from model import Event
+from model import Movie_Show
+from model import Event_Show
+
 from flask_bcrypt import Bcrypt
 import uuid
 import jwt
@@ -133,6 +139,9 @@ def user_auth_middleware(func):
 
 
 
+
+
+
 # Routes for managing the admin
 
 # admin signup
@@ -191,6 +200,9 @@ def admin_login():
         return jsonify({"message": "Login successful", "token": token}), 200
     else:
         return jsonify({"message": "Wrong password"}), 400
+
+
+
 
 
 
@@ -271,8 +283,15 @@ def user_login() :
         return jsonify({"message" : "Wrong password !!"}), 400
 
 
-# get movie
-# http://127.0.0.1:5000/movie/get
+
+
+
+
+# Routes for managing the movie
+
+
+# get movies
+# http://127.0.0.1:5000/movies/get
 @app.route("/movies/get", methods=["GET"])
 def get_all_movies():
     all_movies = Movie.objects()
@@ -290,17 +309,31 @@ def add_movie():
 
 
 
+# Routes for managing the event
+
+
+# get events
+# http://127.0.0.1:5000/events/get
+@app.route("/events/get", methods=["GET"])
+def get_all_events():
+    all_events = Event.objects()
+    return all_events.to_json(), 200
+
 # add event
 # http://127.0.0.1:5000/event/add
 @app.route("/event/add", methods=["POST"])
 def add_event () :
     new_event = request.get_json()
-    movie = Event(**new_event)
-    movie.save()
+    event = Event(**new_event)
+    event.save()
     return movie.to_json(), 201
 
 
 
+
+
+
+# Routes for managing the event_show
 
 # create a new show
 # http://127.0.0.1:5000/event_show/create
@@ -380,6 +413,10 @@ def book_event_show(_id):
 
 
 
+
+# Routes for managing the movie_shows
+
+
 # get all the shows
 # http://127.0.0.1:5000/movie_shows
 @app.route("/movie_shows", methods=["GET"])
@@ -412,6 +449,7 @@ def get_all_shows():
 
     # Return the Response object with a valid JSON response
     return Response(response=json.dumps(updated_movie_shows), status=200, mimetype="application/json")
+
 
 
 # get all the shows related to a particular movie
@@ -453,7 +491,7 @@ def get_related_shows(_id):
     return jsonify(updated_movie_shows)
 
 
-# create a new show
+# create a new movie_show
 # http://127.0.0.1:5000/movie_show/create
 @app.route("/movie_show/create", methods=["POST"])
 def create_movie_show():
@@ -485,7 +523,8 @@ def create_movie_show():
     return movie_show.to_json(), 201
 
 
-# Book a show
+
+# Book a movie_show
 # http://127.0.0.1:5000/book_movie_show/<ObjectId:_id>
 @app.route("/book_movie_show/<ObjectId:_id>", methods=["PUT"])
 def book_movie_show(_id):
