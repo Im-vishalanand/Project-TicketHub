@@ -10,6 +10,8 @@ from flask_bcrypt import Bcrypt
 import uuid
 import jwt
 import mongoengine
+from werkzeug.routing import BaseConverter
+from bson import ObjectId
 
 
 app = Flask(__name__)
@@ -38,6 +40,96 @@ app.config['MONGODB_SETTINGS'] = {
 }
 
 mongoengine.connect(host=app.config['MONGODB_SETTINGS']['host'])
+
+
+# Custom converter for MongoDB ObjectIDs
+class ObjectIdConverter(BaseConverter):
+    def to_python(self, value):
+        try:
+            return ObjectId(value)
+        except:
+            raise ValueError(f"Not a valid ObjectId: {value}")
+
+    def to_url(self, value):
+        if isinstance(value, ObjectId):
+            return str(value)
+        else:
+            raise ValueError(f"Not a valid ObjectId: {value}")
+
+# Register the custom converter with Flask
+app.url_map.converters['ObjectId'] = ObjectIdConverter
+
+
+
+def calculate_end_time(start_time, duration):
+    # Convert start time and duration to minutes
+    start_hour, start_minute = map(int, start_time.split(":"))
+    duration_hour, duration_minute = map(int, duration.split(":"))
+    start_total_minutes = start_hour * 60 + start_minute
+    duration_total_minutes = duration_hour * 60 + duration_minute
+
+    # Calculate end time in minutes
+    end_total_minutes = start_total_minutes + duration_total_minutes
+
+    # Convert end time from minutes to hours:minutes format
+    end_hour = end_total_minutes // 60
+    end_minute = end_total_minutes % 60
+    end_time = f"{end_hour:02d}:{end_minute:02d}"
+
+    return end_time
+
+
+def admin_auth_middleware(func):
+    def decorated_function(*args, **kwargs):
+        token = request.headers.get('Authorization')
+
+        if not token:
+            return jsonify({"message": "Token is missing"}), 401
+
+        try:
+            # Verify the token and extract the admin_id
+            decoded_token = jwt.decode(token, 'my signature', algorithms=['HS256'])
+            admin_id = decoded_token.get('_id')
+            # Find the admin with the provided admin_id
+            admin = Admin.objects(id=admin_id, is_admin=True).first()
+            if not admin:
+                return jsonify({"message": "Unauthorized"}), 401
+            
+            # g.admin_id = admin_id  
+        except jwt.ExpiredSignatureError:
+            return jsonify({"message": "Token has expired"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"message": "Invalid token"}), 401
+
+        return func(*args, **kwargs)
+
+    return decorated_function
+
+def user_auth_middleware(func):
+    def decorate_function(*args, **kwargs):
+        token = request.headers.get('Authorization')
+
+        if not token:
+            return jsonify({"message": "Token is missing"}), 401
+
+        try:
+            # Verify the token and extract the user_id
+            decoded_token = jwt.decode(token, 'my signature', algorithms=['HS256'])
+            user_id = decoded_token.get('_id')
+            # Find the user with the provided user_id
+            user = User.objects(id=user_id).first()
+            if not user:
+                return jsonify({"message": "Unauthorized"}), 401
+            
+            g.user_id = user_id  
+        except jwt.ExpiredSignatureError:
+            return jsonify({"message": "Token has expired"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"message": "Invalid token"}), 401
+
+        return func(*args, **kwargs)
+
+    return decorate_function
 
 
 
@@ -166,7 +258,7 @@ def user_signup():
 def user_login() :
     login_data = request.get_json()
 
-    user = User.onjects(user_email = login_data["user_email"]).first()
+    user = User.objects(user_email = login_data["user_email"]).first()
     if not user :
         return jsonify({"message" : "Wrong Email"}), 400
     
@@ -177,7 +269,6 @@ def user_login() :
         return jsonify({"message" : "Login successful", "token" : token}), 200
     else :
         return jsonify({"message" : "Wrong password !!"}), 400
-
 
 
 # get movie
@@ -201,88 +292,13 @@ def add_movie():
 
 # add event
 # http://127.0.0.1:5000/event/add
-@event_routes.route("/event/add", methods=["POST"])
+@app.route("/event/add", methods=["POST"])
 def add_event () :
     new_event = request.get_json()
     movie = Event(**new_event)
     movie.save()
     return movie.to_json(), 201
 
-
-
-
-# get all the shows
-# http://127.0.0.1:5000/event_shows
-@app.route("/event_shows", methods=["GET"])
-def get_all_shows():
-    event_shows = Event_Show.objects()
-    updated_event_shows = []
-
-    for event_show in event_shows:
-        # Fetch the corresponding Event object using the event_id attribute of event_show
-        event = Event.objects.with_id(event_show.event_id.id)
-
-        if event:
-            # Calculate the end time using the helper function
-            end_time = calculate_end_time(event_show.start_time, event.duration)
-
-            # Create a new dictionary and copy the fields from event_show and event
-            updated_event_show = {
-                **event_show.to_mongo(),
-                "image_url": event.image_url,
-                "duration": event.duration,
-                "event_name": event.event_name,
-                "end_time": end_time,
-                "event_id": str(event.id),  # Convert the ObjectId to a string
-            }
-            updated_event_shows.append(updated_event_show)
-
-    # Convert the ObjectId to a string for each item in the list
-    for show in updated_event_shows:
-        show["_id"] = str(show["_id"])
-
-    # Return the Response object with a valid JSON response
-    return Response(response=json.dumps(updated_event_shows), status=200, mimetype="application/json")
-
-
-
-# get all the shows related to a particular event
-# http://127.0.0.1:5000/event_shows/id
-@app.route("/event_shows/<ObjectId:_id>", methods=["GET"])
-def get_related_shows(_id):
-    # Fetch the Event_Show objects related to the specified Event _id
-    event_shows = Event_Show.objects(event_id=_id)
-    print(event_shows)
-    # Fetch the corresponding Event object
-    event = Event.objects.with_id(_id)  # Use with_id() to fetch the event with the given ObjectId
-
-    if not event:
-        return jsonify({"message": "Event not found"}), 404
-
-    # Create a list to store updated Event_Show objects with additional fields
-    updated_event_shows = []
-
-    # Update each Event_Show object with image_url and duration from the Event object
-    for event_show in event_shows:
-        # Calculate the end time using the helper function
-        end_time = calculate_end_time(event_show.start_time, event.duration)
-
-        # Create a new dictionary and copy the fields from event_show and event
-        updated_event_show = {
-            **event_show.to_mongo(),
-            "image_url": event.image_url,
-            "duration": event.duration,
-            "event_name": event.event_name,
-            "end_time": end_time,
-            "event_id": str(event.id),  # Convert the ObjectId to a string
-        }
-        updated_event_shows.append(updated_event_show)
-
-    # Convert the ObjectId to a string for each item in the list
-    for show in updated_event_shows:
-        show["_id"] = str(show["_id"])
-
-    return jsonify(updated_event_shows)
 
 
 
