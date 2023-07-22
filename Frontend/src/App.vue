@@ -5,13 +5,7 @@
       class="navbar shadow bg-white rounded justify-content-between flex-nowrap flex-row fixed-top"
     >
       <div class="container">
-        <a
-          class="navbar-brand float-left"
-          href="./assets/project-logo.png"
-          target="_blank"
-        >
-          TicketHub
-        </a>
+        <a class="navbar-brand float-left" href="./assets/project-logo.png" target="_blank">TicketHub</a>
         <ul class="nav navbar-nav flex-row float-right">
           <li class="nav-item">
             <router-link class="nav-link pr-3" to="/login">Sign in</router-link>
@@ -25,6 +19,7 @@
       </div>
     </nav>
 
+    
     <!-- Main -->
     <div class="App">
       <div class="vertical-center">
@@ -33,7 +28,10 @@
         </div>
       </div>
     </div>
+
   </div>
+  
+  
 </template>
 
 
