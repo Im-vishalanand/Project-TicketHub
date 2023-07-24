@@ -62,7 +62,7 @@ Open the Backend Folder with VS code or any other IDE of your choice
 
 
 ## ER- Diagram
-![ER-Diagram](https://github.com/Im-vishalanand/Project-TicketHub/assets/108060013/9f53297b-46b9-4d59-84f0-a4abdb4a5dff)
+![ER-Diagram](https://github.com/Im-vishalanand/Project-TicketHub/assets/108060013/32022a8f-2e4c-4f80-8bb6-7955b089912e)
 
 ## API Endpoints
 In this project, here are the list of your API endpoints used with description, and examples of request/response.
