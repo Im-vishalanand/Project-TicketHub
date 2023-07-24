@@ -64,12 +64,25 @@ Open the Backend Folder with VS code or any other IDE of your choice
 ## ER- Diagram
 ![ER-Diagram](https://github.com/Im-vishalanand/Project-TicketHub/assets/108060013/32022a8f-2e4c-4f80-8bb6-7955b089912e)
 
+## URL
+**For Backend**
+
+```bash
+http://localhost:5000
+```
+
+**For Frontend**
+
+```bash
+http://localhost:8080
+```
+
 ## API Endpoints
 In this project, here are the list of your API endpoints used with description, and examples of request/response.
 
 - POST /admin/signup - sign up for an admin
 - POST /admin/login - login for an admin
-  
+
 - POST /user/signup - sign up for a user
 - POST /user/login - login for a user
 - GET /users/all - get all user
