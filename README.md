@@ -98,8 +98,3 @@ In this project, here are the list of your API endpoints used with description, 
 ## Author
 
 - [Kumar Vishal Anand](https://github.com/Im-vishalanand)
-
-
-## Acknowledgements
-
-- [Masai School](https://www.masaischool.com/)
